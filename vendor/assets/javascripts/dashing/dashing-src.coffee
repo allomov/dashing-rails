@@ -86,11 +86,11 @@ Dashing.widgets = widgets = {}
 Dashing.lastEvents = lastEvents = {}
 Dashing.debugMode = false
 
-source = new EventSource('/dashing/events')
-source.addEventListener 'open', (e) ->
+Dashing.eventSource = new EventSource('/dashing/events')
+Dashing.eventSource.addEventListener 'open', (e) ->
   console.log("Connection opened", e)
 
-source.addEventListener 'error', (e)->
+Dashing.eventSource.addEventListener 'error', (e)->
   console.log("Connection error", e)
   if (e.currentTarget.readyState == EventSource.CLOSED)
     console.log("Connection closed")
@@ -98,7 +98,7 @@ source.addEventListener 'error', (e)->
       window.location.reload()
     ), 5 * 60 * 1000
 
-source.addEventListener 'message', (e) =>
+Dashing.eventSource.addEventListener 'message', (e) =>
   data = JSON.parse(e.data)
   if lastEvents[data.id]?.updatedAt != data.updatedAt
     if Dashing.debugMode
