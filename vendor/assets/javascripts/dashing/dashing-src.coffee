@@ -86,28 +86,33 @@ Dashing.widgets = widgets = {}
 Dashing.lastEvents = lastEvents = {}
 Dashing.debugMode = false
 
-Dashing.eventSource = new EventSource('/dashing/events')
-Dashing.eventSource.addEventListener 'open', (e) ->
-  console.log("Connection opened", e)
+Dashing.eventSource = {}
 
-Dashing.eventSource.addEventListener 'error', (e)->
-  console.log("Connection error", e)
-  if (e.currentTarget.readyState == EventSource.CLOSED)
-    console.log("Connection closed")
-    setTimeout (->
-      window.location.reload()
-    ), 5 * 1000
+Dashing.reloadEventSource = -> 
+  console.log "Openning connection."
+  Dashing.eventSource = new EventSource('/dashing/events')
+  Dashing.eventSource.addEventListener 'open', (e) ->
+    console.log("Connection opened", e)
 
-Dashing.eventSource.addEventListener 'message', (e) =>
-  data = JSON.parse(e.data)
-  if lastEvents[data.id]?.updatedAt != data.updatedAt
-    if Dashing.debugMode
-      console.log("Received data for #{data.id}", data)
-    lastEvents[data.id] = data
-    if widgets[data.id]?.length > 0
-      for widget in widgets[data.id]
-        widget.receiveData(data)
+  Dashing.eventSource.addEventListener 'error', (e)->
+    console.log("Connection error", e)
+    if (e.currentTarget.readyState == EventSource.CLOSED)
+      console.log("Connection closed")
+      setTimeout ( ->
+        Dashing.reloadEventSource()
+      ), 1000
+
+  Dashing.eventSource.addEventListener 'message', (e) =>
+    data = JSON.parse(e.data)
+    if lastEvents[data.id]?.updatedAt != data.updatedAt
+      if Dashing.debugMode
+        console.log("Received data for #{data.id}", data)
+      lastEvents[data.id] = data
+      if widgets[data.id]?.length > 0
+        for widget in widgets[data.id]
+          widget.receiveData(data)
 
 
 $(document).ready ->
   Dashing.run()
+  Dashing.reloadEventSource()
